@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Body, Path, Query
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional,List
+from fastapi.responses import JSONResponse
 
 class Movie(BaseModel):
     id: Optional[int] | None
@@ -67,9 +68,9 @@ movies = [
 ]
 
 
-@app.get('/movies', tags=["Movies"])
-def get_movies():
-    return movies
+@app.get('/movies', tags=["Movies"], response_model=List[Movie], status_code=200)
+def get_movies() -> List[Movie]:
+    return JSONResponse(status_code=200, content= movies)
 
 @app.get('/movies/', tags=["Movies"])
 def get_movies(category : str = Query(min_length=5, max_length=15)):
