@@ -6,6 +6,9 @@ from fastapi.responses import JSONResponse
 from jwt_manager import create_token,validate_token
 from fastapi.security import HTTPBearer
 
+from config.database import Session, engine, Base
+from models.movie import Movie as MovieModel
+
 class JWTBearer(HTTPBearer):
     async def __call__(self, request: Request):
         auth = await super().__call__(request)
@@ -13,6 +16,7 @@ class JWTBearer(HTTPBearer):
         if data["user"] != "jbosch":
             raise HTTPException(statuscode=403, detail="Credenciales incorrectas")
         return await super().__call__(request)
+
 
 
 class Movie(BaseModel):
@@ -43,6 +47,8 @@ class User(BaseModel):
 app = FastAPI()
 app.title= "Mi aplicación con FastAPI"
 app.version = "0.0.1"
+
+Base.metadata.create_all(bind=engine)
 
 @app.get('/', tags=["Home"])
 def message():
