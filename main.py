@@ -20,12 +20,12 @@ class JWTBearer(HTTPBearer):
 
 
 class Movie(BaseModel):
-    id: Optional[int] | None
+    id: Optional[int] = None 
     title: str = Field(min_length=5, max_length=20)
     overview: str = Field(min_length=15, max_length=120)
     year: int = Field( le=2024)
     rating: float
-    category: str = Field(min_length=15, max_length=520)
+    category: str = Field(min_length=4, max_length=520)
 
     class Config:
         json_schema_extra = {
@@ -120,17 +120,20 @@ def get_movie(id: int = Path(le=2000, ge=0)):
         return []
     
 
-@app.post('/movies', tags=["Movies"])
-def add_movie(movie:Movie = Body()):
-    movies.append({
-        "id": movie.id,
-           "title": movie.title,
-           "overview": movie.overview,
-           "year": movie.year,
-           "rating": movie.rating,
-           "category": movie.category
-    })
-    return movies
+@app.post('/movies', tags=["Movies"], response_model=dict, status_code=201)
+def add_movie(movie:Movie)-> dict:
+    db = Session()
+    try:
+      new_movie = MovieModel(**movie.model_dump())
+      db.add(new_movie)
+      db.commit()
+      db.refresh(new_movie)  # Asegúrate de refrescar el objeto
+      return {"message": "Película agregada exitosamente"}
+    except Exception as e:
+        db.rollback()  # En caso de error, hace rollback
+        raise HTTPException(status_code=500, detail=str(e))  # Devuelve el error
+    finally:
+        db.close()  # Cierra la sesión
 
 @app.put('/movies', tags=["Movies"])
 def add_movie(id: int , movie:Movie = Body()):
